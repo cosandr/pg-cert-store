@@ -25,7 +25,7 @@ TABLES = {
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Push certs to PGSQL')
-    parser.add_argument('-c', '--config', type=argparse.FileType('r'), default='/etc/pg-sync-cert/config.conf', help='Path to config file')
+    parser.add_argument('-c', '--config', type=argparse.FileType('r'), default='/etc/pg-cert-store/config.conf', help='Path to config file')
     parser.add_argument('-n', '--name', required=True, help='Name of certificate')
     parser.add_argument('-p', '--public-key', type=argparse.FileType('r'), required=True, help='Path to public key')
     parser.add_argument('-k', '--private-key', type=argparse.FileType('r'), required=True, help='Path to private key')

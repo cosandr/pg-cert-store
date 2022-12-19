@@ -18,7 +18,7 @@ class CertificateNotFoundError(Exception):
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Pull certs from PGSQL')
-    parser.add_argument('-c', '--config', type=argparse.FileType('r'), default='/etc/pg-sync-cert/config.conf', help='Path to config file')
+    parser.add_argument('-c', '--config', type=argparse.FileType('r'), default='/etc/pg-cert-store/config.conf', help='Path to config file')
     parser.add_argument('-n', '--name', required=True, help='Name of certificate')
     parser.add_argument('-p', '--public-key', required=True, help='Path to public key')
     parser.add_argument('-k', '--private-key', required=True, help='Path to private key')
@@ -75,7 +75,7 @@ def main():
     config = read_config(args.config)
     pg_sync_config = config.get('pg_sync', {})
     schema = pg_sync_config.get('schema', 'public')
-    hooks_dir = pg_sync_config.get('hooks_dir', '/etc/pg-sync-cert/hooks.d')
+    hooks_dir = pg_sync_config.get('hooks_dir', '/etc/pg-cert-store/hooks.d')
 
     conn = psycopg2.connect(**config['pgsql'])
     changed = False

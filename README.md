@@ -31,7 +31,7 @@ GRANT SELECT ON ALL TABLES IN SCHEMA public TO certs_reader;
 
 ### Example config
 
-`/etc/pg-sync-cert/config.conf`
+`/etc/pg-cert-store/config.conf`
 
 Keys in pgsql section are passed directly to `psycopg2.connect()`, see [PG docs](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS)
 for a complete list
@@ -48,7 +48,7 @@ password=certs_pusher
 [pg_sync]
 # Defaults to public
 schema=certs
-# Defaults to /etc/pg-sync-cert/hooks.d
+# Defaults to /etc/pg-cert-store/hooks.d
 hooks_dir=/etc/letsencrypt/renewal-hooks/deploy
 ```
 
