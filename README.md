@@ -7,11 +7,11 @@ for example:
 
 ```sh
 # RHEL
-dnf install -y python3-pyOpenSSL python3-psycopg2
+dnf install -y python3-cryptography python3-psycopg2
 # Debian
-apt install -y python3-psycopg2 python3-openssl
+apt install -y python3-psycopg2 python3-cryptography
 # Arch
-pacman -S python-psycopg2 python-pyopenssl
+pacman -S python-psycopg2 python-cryptography
 ```
 
 ### Database setup

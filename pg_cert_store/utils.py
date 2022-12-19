@@ -1,8 +1,7 @@
 import configparser
-from datetime import datetime, timezone
+from datetime import timezone
 from io import TextIOWrapper
-
-import OpenSSL
+from cryptography import x509
 
 
 def read_config(f: TextIOWrapper) -> dict:
@@ -18,6 +17,5 @@ def read_config(f: TextIOWrapper) -> dict:
     return ret
 
 
-def get_cert_expiry(cert):
-    x509 = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, cert)
-    return datetime.strptime(x509.get_notAfter().decode(), "%Y%m%d%H%M%SZ").replace(tzinfo=timezone.utc)
+def get_cert_expiry(cert: str):
+    return x509.load_pem_x509_certificate(cert.encode()).not_valid_after.replace(tzinfo=timezone.utc)
