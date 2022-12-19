@@ -1,5 +1,7 @@
 # Sync certs to/from PostgreSQL
 
+See my [Ansible role](https://github.com/cosandr/ansible-role-pg-cert-store) for automating deployments of this.
+
 ### Requirements
 
 These are intended to run as services, you should install the requirements from your package manager,
@@ -57,7 +59,7 @@ hooks_dir=/etc/letsencrypt/renewal-hooks/deploy
 Install with pip
 
 ```sh
-pip install --no-deps --install-option="--install-scripts=/usr/local/bin" git+https://github.com/cosandr/pg-cert-store.git
+pip install --no-deps --prefix /usr/local git+https://github.com/cosandr/pg-cert-store.git
 ```
 
 Make sure you add the config file as described above.
