@@ -81,6 +81,7 @@ Generate self-signed certificate
 
 ```sh
 openssl req -x509 -newkey rsa:4096 -keyout test/push.key -out test/push.crt -sha256 -days 365 -nodes -subj '/CN=localhost'
+openssl req -x509 -newkey rsa:4096 -keyout /dev/null -out test/push-chain.crt -sha256 -days 365 -nodes -subj '/CN=localhost'
 ```
 
 Place connection details to a PG server in a `test/pg_cert_sync.conf` file.
@@ -88,8 +89,8 @@ Place connection details to a PG server in a `test/pg_cert_sync.conf` file.
 Run with
 
 ```shell
-python -m pg_cert_store.push --config test/pg_cert_sync.conf --name test --public-key test/push.crt --private-key test/push.key
-python -m pg_cert_store.pull --config test/pg_cert_sync.conf --name test --public-key test/pull.crt --private-key test/pull.key
+python -m pg_cert_store.push --config test/pg_cert_sync.conf --name test --public-key test/push.crt --private-key test/push.key --chain test/push-chain.crt
+python -m pg_cert_store.pull --config test/pg_cert_sync.conf --name test --public-key test/pull.crt --private-key test/pull.key --chain test/pull-chain.crt
 ```
 
 ### Author

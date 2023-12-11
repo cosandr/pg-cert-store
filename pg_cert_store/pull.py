@@ -22,11 +22,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('-n', '--name', required=True, help='Name of certificate')
     parser.add_argument('-p', '--public-key', required=True, help='Path to public key')
     parser.add_argument('-k', '--private-key', required=True, help='Path to private key')
+    parser.add_argument('--chain', help='Path to certificate chain')
     parser.add_argument('-f', '--force', action='store_true', help='Always pull certificates')
     return parser.parse_args()
 
 
-def get_cert(conn: psycopg2.extensions.connection, schema: str, name: str, public: str, private: str, force: bool = False) -> bool:
+def get_cert(conn: psycopg2.extensions.connection, schema: str, name: str, public: str, private: str, chain: str, force: bool = False) -> bool:
     """Returns True if certificate was changed, False otherwise"""
     # Check if cert exists
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -35,7 +36,7 @@ def get_cert(conn: psycopg2.extensions.connection, schema: str, name: str, publi
     if not res:
         raise CertificateNotFoundError(name)
     # Check if a certificate exists already
-    if not force and os.path.exists(public):
+    if not force and os.path.exists(public) and os.path.exists(private) and (chain is None or os.path.exists(chain)):
         with open(public, 'r') as f:
             existing_expires = get_cert_expiry(f.read())
         # Don't do anything if the expiry date is the same
@@ -44,7 +45,7 @@ def get_cert(conn: psycopg2.extensions.connection, schema: str, name: str, publi
             return False
     # Certificate doesn't exist or was updated
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
-        cur.execute(f"SELECT public_key, private_key FROM {schema}.certs WHERE id=%s", (res['id'],))
+        cur.execute(f"SELECT public_key, private_key, chain FROM {schema}.certs WHERE id=%s", (res['id'],))
         new_data = cur.fetchone()
     print(f'Got new certificate "{name}" expiring at {res["expires"]}', file=sys.stderr)
     with open(public, 'w') as f:
@@ -53,6 +54,11 @@ def get_cert(conn: psycopg2.extensions.connection, schema: str, name: str, publi
     with open(private, 'w') as f:
         f.write(new_data['private_key'])
     print(f'Wrote private key "{private}"', file=sys.stderr)
+    if chain and new_data['chain']:
+        with open(chain, 'w') as f:
+            f.write(new_data['chain'])
+        print(f'Wrote certificate chain "{chain}"', file=sys.stderr)
+
     return True
 
 
@@ -80,7 +86,7 @@ def main():
     conn = psycopg2.connect(**config['pgsql'])
     changed = False
     try:
-        changed = get_cert(conn, schema, name=args.name, public=args.public_key, private=args.private_key, force=args.force)
+        changed = get_cert(conn, schema, name=args.name, public=args.public_key, private=args.private_key, chain=args.chain, force=args.force)
     except CertificateNotFoundError as e:
         print(f'Certificate "{e.name}" not found in database', file=sys.stderr)
         return 1

@@ -17,6 +17,7 @@ TABLES = {
         name VARCHAR(255) NOT NULL UNIQUE,
         public_key TEXT NOT NULL,
         private_key TEXT NOT NULL,
+        chain TEXT,
         expires TIMESTAMPTZ NOT NULL,
         updated TIMESTAMPTZ DEFAULT NOW()
     );"""
@@ -29,6 +30,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('-n', '--name', required=True, help='Name of certificate')
     parser.add_argument('-p', '--public-key', type=argparse.FileType('r'), required=True, help='Path to public key')
     parser.add_argument('-k', '--private-key', type=argparse.FileType('r'), required=True, help='Path to private key')
+    parser.add_argument('--chain', type=argparse.FileType('r'), help='Path to certificate chain')
     return parser.parse_args()
 
 
@@ -60,30 +62,35 @@ def create_tables(conn: psycopg2.extensions.connection, schema: str):
     conn.commit()
 
 
-def update_cert(conn: psycopg2.extensions.connection, schema: str, name: str, public: TextIOWrapper, private: TextIOWrapper):
+def update_cert(conn: psycopg2.extensions.connection, schema: str, name: str, public: TextIOWrapper, private: TextIOWrapper, chain: TextIOWrapper):
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
-        cur.execute(f"SELECT id, public_key, private_key FROM {schema}.certs WHERE name=%s", (name,))
+        cur.execute(f"SELECT id, public_key, private_key, chain FROM {schema}.certs WHERE name=%s", (name,))
         res = cur.fetchone()
     public_data = public.read()
     public.close()
     private_data = private.read()
     private.close()
+    chain_data = None
+    if chain is not None:
+        chain_data = chain.read()
+        chain.close()
+
     expires = get_cert_expiry(public_data)
-    if res and (res['public_key'] != public_data or res['private_key'] != private_data):
+    if res and (res['public_key'] != public_data or res['private_key'] != private_data or res['chain'] != chain_data):
         with conn.cursor() as cur:
             q = (f"UPDATE {schema}.certs SET "
-                 "public_key=%s, private_key=%s, expires=%s, updated=%s "
+                 "public_key=%s, private_key=%s, chain=%s, expires=%s, updated=%s "
                  "WHERE id=%s")
-            q_args = (public_data, private_data, expires, datetime.now(tz=timezone.utc), res['id'])
+            q_args = (public_data, private_data, chain_data, expires, datetime.now(tz=timezone.utc), res['id'])
             cur.execute(q, q_args)
         conn.commit()
         print(f'Certificate "{name}" updated', file=sys.stderr)
     elif not res:
         with conn.cursor() as cur:
             q = (f"INSERT INTO {schema}.certs "
-                 "(name, public_key, private_key, expires, updated) "
-                 "VALUES (%s, %s, %s, %s, %s)")
-            q_args = (name, public_data, private_data, expires, datetime.now(tz=timezone.utc))
+                 "(name, public_key, private_key, chain, expires, updated) "
+                 "VALUES (%s, %s, %s, %s, %s, %s)")
+            q_args = (name, public_data, private_data, chain_data, expires, datetime.now(tz=timezone.utc))
             cur.execute(q, q_args)
         conn.commit()
         print(f'Certificate "{name}" added', file=sys.stderr)
@@ -100,7 +107,7 @@ def main():
     conn = psycopg2.connect(**config['pgsql'])
     create_schema(conn, schema=schema)
     create_tables(conn, schema=schema)
-    update_cert(conn, schema, name=args.name, public=args.public_key, private=args.private_key)
+    update_cert(conn, schema, name=args.name, public=args.public_key, private=args.private_key, chain=args.chain)
 
 
 if __name__ == '__main__':
